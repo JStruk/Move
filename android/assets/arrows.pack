@@ -1,0 +1,47 @@
+
+arrows.png
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+leftright
+  rotate: false
+  xy: 1, 516
+  size: 460, 256
+  orig: 460, 256
+  offset: 0, 0
+  index: -1
+badlogic
+  rotate: false
+  xy: 1, 258
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+left
+  rotate: false
+  xy: 463, 517
+  size: 198, 255
+  orig: 198, 255
+  offset: 0, 0
+  index: -1
+lettdown
+  rotate: false
+  xy: 1, 1
+  size: 198, 255
+  orig: 198, 255
+  offset: 0, 0
+  index: -1
+right
+  rotate: false
+  xy: 259, 259
+  size: 198, 255
+  orig: 198, 255
+  offset: 0, 0
+  index: -1
+rightdown
+  rotate: false
+  xy: 663, 517
+  size: 198, 255
+  orig: 198, 255
+  offset: 0, 0
+  index: -1

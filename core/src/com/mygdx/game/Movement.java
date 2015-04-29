@@ -15,17 +15,13 @@ import com.badlogic.gdx.utils.Array;
 public class Movement extends ApplicationAdapter implements InputProcessor, GestureDetector.GestureListener {
     private World world;
     private Box2DDebugRenderer b2dr;
-    int nNum;
     public static final float fPpm = 100;
     public static final short shGround = 2, shPlayer = 4;
     public static final int nWidth = 320, nHeight = 240;
-    private OrthographicCamera b2dCam;
+    private OrthographicCamera camera;
     private CollisionDetector collisionDetector;
-    GestureDetector gestureDetector;
-    InputProcessor inputProcessor;
     private Body playerBody;
-    InputMultiplexer multiPlexer;
-    // GestureDetector gestureDetector;
+    public static final float STEP = 1 / 60f;
     float w, h;
     Vector2 vPlat1, vPlat2;
     Sprite sDude, sPlat;
@@ -34,30 +30,26 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
     Array<Body> arBodies = new Array<Body>();
 
     public void create() {
-        gestureDetector = new GestureDetector(this);
-     //   inputProcessor = new InputProcessor(this);
+        // Discovered "InputMultiplexer" here!: http://www.badlogicgames.com/forum/viewtopic.php?f=20&t=10690
         InputMultiplexer multi = new InputMultiplexer();
         multi.addProcessor(this);
-        multi.addProcessor(gestureDetector);
+        multi.addProcessor(new GestureDetector(this));
+        Gdx.input.setInputProcessor(multi);
+
         batch = new SpriteBatch();
         collisionDetector = new CollisionDetector();
         vPlat1 = new Vector2(-15, 0);
         vPlat2 = new Vector2(15, 0);
         w = Gdx.graphics.getWidth();
         h = Gdx.graphics.getHeight();
-        //  gestureDetector = new GestureDetector(this);
-        Gdx.input.setInputProcessor(multi);
-
 
         world = new World(new Vector2(0, -9.81f), true);
-
         world.setContactListener(collisionDetector);
 
         b2dr = new Box2DDebugRenderer();
 
         // create platform
         BodyDef bdef = new BodyDef();
-        //  bdef.position.set(160 / fPpm, 120 / fPpm);7
         bdef.position.set(160 / fPpm, 10 / fPpm);
         bdef.type = BodyDef.BodyType.StaticBody;
         Body body = world.createBody(bdef);
@@ -69,14 +61,14 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
         fdef.filter.categoryBits = shGround;
         fdef.filter.maskBits = shPlayer;
 
-        body.createFixture(fdef).setUserData(Gdx.files.internal("platform.png"));
-        sPlat = new Sprite(new Texture(Gdx.files.internal("platform.png")));
-        sPlat.setSize((28 / fPpm) * 4, (30 / fPpm) * 4);
+        body.createFixture(fdef);
 
-        sPlat.setOrigin(sPlat.getWidth() / 2, sPlat.getHeight() / 2);
-        body.setUserData(sPlat);
-        //  FixtureDef ground = new FixtureDef();
-
+        sPlat = new Sprite(new Texture(Gdx.files.internal("platform.png"))); //Create sprite for the platform
+        sPlat.setSize((28 / fPpm) * 4, (30 / fPpm) * 4);  // Makes the sprite the right size to just cover the Box2D Body
+        sPlat.setOrigin(sPlat.getWidth() / 2, sPlat.getHeight() / 2); // Sets the Origin of the sprite to the middle instead of the bottom left
+        body.setUserData(sPlat); // set the user data as the sprite so in render it returns as an instance of a sprite to draw the sprite on the body :D
+        //https://www.youtube.com/watch?v=1cB-iWycUH4
+        //This video explains very well how to associate the sprite with the body and what is really happening when drawing a sprite and a body together, thanks :)
 
         // create player
         bdef.position.set(160 / fPpm, 200 / fPpm);
@@ -87,47 +79,39 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
         fdef.shape = shape;
         fdef.filter.categoryBits = shPlayer;
         fdef.filter.maskBits = shGround;
-        playerBody.createFixture(fdef).setUserData("player");
+        playerBody.createFixture(fdef);
 
-        // create foot sensor
-        shape.setAsBox(2 / fPpm, 2 / fPpm, new Vector2(0, -5 / fPpm), 0);
-        fdef.shape = shape;
-        fdef.filter.categoryBits = shPlayer;
-        fdef.filter.maskBits = shGround;
-        fdef.isSensor = true;
-        playerBody.createFixture(fdef).setUserData("foot");
-        sDude = new Sprite(new Texture(Gdx.files.internal("badlogic.jpg")));
-        sDude.setSize((2 / fPpm) * 4, (2 / fPpm) * 4);
-        sDude.setOrigin(sDude.getWidth() / 2, sDude.getHeight() / 2);
-        playerBody.setUserData(sDude);
+        playerBody.createFixture(fdef).setUserData("player"); //Set the user data of the playerbody to a string to check in the collision detector
+        sDude = new Sprite(new Texture(Gdx.files.internal("badlogic.jpg"))); //Create the sprite for the player
+        sDude.setSize((2 / fPpm) * 4, (2 / fPpm) * 4); // set the size of the player to the same size as the body (Box2s uses metres, sprites use pixels so weird conversions, this one looked okay)
+        sDude.setOrigin(sDude.getWidth() / 2, sDude.getHeight() / 2);  //set the origin of the sprite to the middle instead of bottom left
+        playerBody.setUserData(sDude); //set the user data of the player as the sprite so it returns as an instance of a sprite to draw sprite on the body
 
 
         // set up box2d cam
-        b2dCam = new OrthographicCamera();
-        b2dCam.setToOrtho(false, nWidth / fPpm, nHeight / fPpm);
-
-    }
-
-    public void update(float dt) {
-        dt = Game.STEP;
-        world.step(dt, 6, 2);
+        camera = new OrthographicCamera();
+        camera.setToOrtho(false, nWidth / fPpm, nHeight / fPpm);
     }
 
     public void render() {
-        //  playerBody.setLinearVelocity(0f, -5f);
-        //  world.step();
-        // clear screen
+        //update camera to player location
+        camera.position.set(playerBody.getPosition().x, playerBody.getPosition().y, 0);
+        camera.update();
+
+        //apply the physics to/update the world every 1/60th of a second
+        world.step(STEP, 6, 2);
+
         Gdx.gl20.glClear(GL20.GL_COLOR_BUFFER_BIT);
-        update(Game.STEP);
 
-
-        // draw box2d world
-        b2dr.render(world, b2dCam.combined);
-        batch.setProjectionMatrix(b2dCam.combined);
+        // render b2d world
+        b2dr.render(world, camera.combined);
+        batch.setProjectionMatrix(camera.combined);
+        //start drawing the sprites
         batch.begin();
+        //put all the bodies on the stage into an array of bodies
         world.getBodies(arBodies);
         for (Body body : arBodies)
-            if (body.getUserData() != null && body.getUserData() instanceof Sprite) {
+            if (body.getUserData() != null && body.getUserData() instanceof Sprite) { // check if the user data of the body is a sprite, then grab that sprite and draw it on the bodys position and rotation
                 Sprite sprite = (Sprite) body.getUserData();
                 sprite.setPosition(body.getPosition().x - sprite.getWidth() / 2, body.getPosition().y - sprite.getHeight() / 2);
                 sprite.setRotation(body.getAngle() * MathUtils.radiansToDegrees);
@@ -136,7 +120,12 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
         batch.end();
     }
 
-    public void dispose() {
+    @Override
+    public boolean tap(float x, float y, int count, int button) {
+        if (collisionDetector.hitTest()) {//if the player is on a platform, and the screen is tapped allow the player to jump
+            playerBody.applyForceToCenter(0, 200, true);//jump :D
+        }
+        return false;
     }
 
     @Override
@@ -147,12 +136,6 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
         if (Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.RIGHT)) {
             playerBody.setLinearVelocity(1f, 0f);
         }
-        // if (collisionDetector.hitTest()) {
-        //   if (Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.UP)) {
-        //   playerBody.applyForceToCenter(0, 200, true);
-        //  }
-        //}
-
         return false;
     }
 
@@ -196,14 +179,6 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
         return false;
     }
 
-    @Override
-    public boolean tap(float x, float y, int count, int button) {
-      if(collisionDetector.hitTest()){
-            System.out.println("tap");
-            playerBody.applyForceToCenter(0, 200, true);
-        }
-        return false;
-    }
 
     @Override
     public boolean longPress(float x, float y) {

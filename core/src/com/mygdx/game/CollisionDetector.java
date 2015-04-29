@@ -12,10 +12,10 @@ public class CollisionDetector implements ContactListener {
         Fixture fa = c.getFixtureA();
         Fixture fb = c.getFixtureB();
         isHit = true;
-        if (fa.getUserData() != null && fa.getUserData().equals("foot")) {
+        if (fa.getUserData() != null && fa.getUserData().equals("player")) {
             isHit = true;
         }
-        if (fb.getUserData() != null && fb.getUserData().equals("foot")) {
+        if (fb.getUserData() != null && fb.getUserData().equals("player")) {
             isHit = true;
         }
     }
@@ -25,11 +25,11 @@ public class CollisionDetector implements ContactListener {
         Fixture fa = c.getFixtureA();
         Fixture fb = c.getFixtureB();
 
-        if (fa.getUserData() != null && fa.getUserData().equals("foot")) {
+        if (fa.getUserData() != null && fa.getUserData().equals("player")) {
             isHit = false;
             System.out.println("false");
         }
-        if (fb.getUserData() != null && fb.getUserData().equals("foot")) {
+        if (fb.getUserData() != null && fb.getUserData().equals("player")) {
             isHit = false;
         }
 

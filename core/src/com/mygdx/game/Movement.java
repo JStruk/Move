@@ -12,7 +12,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.utils.Array;
 
-public class Movement extends ApplicationAdapter implements InputProcessor, GestureDetector.GestureListener {
+public class Movement extends ApplicationAdapter implements InputProcessor, GestureDetector.GestureListener, ApplicationListener {
     private World world;
     private Box2DDebugRenderer b2dr;
     public static final float fPpm = 100;
@@ -20,12 +20,17 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
     public static final int nWidth = 320, nHeight = 240;
     private OrthographicCamera camera;
     private CollisionDetector collisionDetector;
+    private HitTest hitTest;
     private Body playerBody;
     public static final float STEP = 1 / 60f;
     float w, h;
+    int nCount = 0;
+    int nAccelX, nAccelY;
     Vector2 vPlat1, vPlat2;
     Sprite sDude, sPlat;
     SpriteBatch batch;
+    float acceleration;
+    boolean isHitLeft=false, isHitRight=false;
 
     Array<Body> arBodies = new Array<Body>();
 
@@ -48,11 +53,28 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
 
         b2dr = new Box2DDebugRenderer();
 
+        //create right wall
+        BodyDef rightwalldef = new BodyDef();
+        rightwalldef.type = BodyDef.BodyType.StaticBody;
+        rightwalldef.position.set((Gdx.graphics.getHeight() / 2) / fPpm, 0); // gameBed.position is the world co-ordinate of the bottom left corner of the rectangular block
+        Body rightwallbody = world.createBody(rightwalldef);
+        PolygonShape rightwall = new PolygonShape();
+        //rightwalldef.origin.x = 0.005f;
+        // origin.y = (float)(gameBed.bounds.getHeight()) / 2;
+        rightwall.setAsBox(Gdx.graphics.getWidth() / fPpm, 0);
+        FixtureDef rightwallFixtureDef = new FixtureDef();
+        rightwallFixtureDef.shape = rightwall;
+        rightwallFixtureDef.restitution = 0.9f;
+        rightwallbody.createFixture(rightwallFixtureDef);
+        rightwall.dispose();
+
+
         // create platform
         BodyDef bdef = new BodyDef();
         bdef.position.set(160 / fPpm, 10 / fPpm);
         bdef.type = BodyDef.BodyType.StaticBody;
         Body body = world.createBody(bdef);
+
 
         PolygonShape shape = new PolygonShape();
         shape.setAsBox(50 / fPpm, 5 / fPpm);
@@ -91,13 +113,47 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
         // set up box2d cam
         camera = new OrthographicCamera();
         camera.setToOrtho(false, nWidth / fPpm, nHeight / fPpm);
+        hitTest = new HitTest(playerBody.getPosition().x, playerBody.getPosition().y, 160 / fPpm, 200 / fPpm, w, fPpm);
     }
 
     public void render() {
-        //update camera to player location
-        camera.position.set(playerBody.getPosition().x, playerBody.getPosition().y, 0);
-        camera.update();
+        w = ((Gdx.graphics.getWidth()) / fPpm) / 2;
+        hitTest = new HitTest(playerBody.getPosition().x, playerBody.getPosition().y, 5 / fPpm, 5 / fPpm, w, fPpm);
+        hitTest = new HitTest(playerBody.getPosition().x, playerBody.getPosition().y, 5 / fPpm, 5 / fPpm, w, fPpm);
+        acceleration = Gdx.input.getAccelerometerX();
+        nCount += 1;
+        isHitRight = hitTest.isHitRight();
+        isHitLeft = hitTest.isHitLeft();
 
+        if (hitTest.isHitRight()) {
+            playerBody.setTransform((((Gdx.graphics.getWidth()) / fPpm) / 2)-(5/fPpm), playerBody.getPosition().y, playerBody.getAngle());
+          //  playerBody.setLinearVelocity(0f,0f);
+            System.out.println("true");
+        }
+        if (hitTest.isHitLeft()) {
+            playerBody.setTransform(0+(5/fPpm), playerBody.getPosition().y, playerBody.getAngle());
+            playerBody.setLinearVelocity(0f,0f);
+            System.out.println("true");
+        }
+        //   hitTest.isHitRight = false;
+        //  if (nCount % 60 == 0) {
+        ///    System.out.println(acceleration);
+        //}
+
+        //  nAccelX = (int) Gdx.input.getAccelerometerX();
+        //    nAccelY = (int) Gdx.input.getAccelerometerY();
+        //  if(Math.abs(acceleration)>0.3f){
+        //    playerBody.setLinearVelocity(1f, 0f);
+        //}
+        move(acceleration);
+        //  System.out.println("accel x: " + Gdx.input.getAccelerometerY() + " accel y: " + Gdx.input.getAccelerometerY() + " orientation: " + Gdx.input.getNativeOrientation() + " Azimuth: " + Gdx.input.getAzimuth());
+        //  if(Gdx.input.getAzimuth()<-170){
+        //    playerBody.setLinearVelocity(1f, 0f);
+        //}
+        //update camera to player location
+        camera.position.set(camera.position.x, playerBody.getPosition().y, 0);
+        camera.update();
+//
         //apply the physics to/update the world every 1/60th of a second
         world.step(STEP, 6, 2);
 
@@ -120,6 +176,21 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
         batch.end();
     }
 
+    public void move(float _acceleration) {
+        //    if (!hitTest.isCharacterHitWall()) {
+        //      if (_acceleration > 0.3f) {
+        //        playerBody.applyLinearImpulse(1f, 0f, playerBody.getPosition().x + (Gdx.graphics.getWidth() / 4), (playerBody.getPosition().y) + Gdx.graphics.getWidth() / 4, true);
+        // playerBody.applyForce(1f, 0f, playerBody.getPosition().x + (Gdx.graphics.getWidth() / 4), (playerBody.getPosition().y) + Gdx.graphics.getWidth() / 4, true);
+        //   }
+        //  if (_acceleration < -0.3f) {
+//          / playerBody.applyForce(-1f, 0f, playerBody.getPosition().x + (Gdx.graphics.getWidth() / 4), (playerBody.getPosition().y) + Gdx.graphics.getWidth() / 4, true);
+        //   playerBody.applyLinearImpulse(-1f, 0f, playerBody.getPosition().x + (Gdx.graphics.getWidth() / 4), (playerBody.getPosition().y) + Gdx.graphics.getWidth() / 4, true);
+
+        // }
+//}
+
+    }
+
     @Override
     public boolean tap(float x, float y, int count, int button) {
         if (collisionDetector.hitTest()) {//if the player is on a platform, and the screen is tapped allow the player to jump
@@ -130,10 +201,10 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
 
     @Override
     public boolean keyDown(int keycode) {
-        if (Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.LEFT)) {
+        if (Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.LEFT)&&!isHitLeft){
             playerBody.setLinearVelocity(-1f, 0f);
         }
-        if (Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.RIGHT)) {
+        if (Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.RIGHT)&&!isHitRight) {
             playerBody.setLinearVelocity(1f, 0f);
         }
         return false;

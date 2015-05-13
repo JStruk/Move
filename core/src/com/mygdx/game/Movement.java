@@ -1,33 +1,46 @@
 package com.mygdx.game;
 
-import com.badlogic.gdx.*;
+import com.badlogic.gdx.ApplicationAdapter;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.InputMultiplexer;
+import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.input.GestureDetector;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.*;
+import com.badlogic.gdx.physics.box2d.Body;
+import com.badlogic.gdx.physics.box2d.BodyDef;
+import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
+import com.badlogic.gdx.physics.box2d.FixtureDef;
+import com.badlogic.gdx.physics.box2d.PolygonShape;
+import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.Array;
 
 public class Movement extends ApplicationAdapter implements InputProcessor, GestureDetector.GestureListener {
-    private World world;
-    private Box2DDebugRenderer b2dr;
     public static final float fPpm = 100;
     public static final short shGround = 2, shPlayer = 4;
     public static final int nWidth = 320, nHeight = 240;
-    private OrthographicCamera camera;
-    private CollisionDetector collisionDetector;
-    private Body playerBody;
     public static final float STEP = 1 / 60f;
     float w, h;
     Vector2 vPlat1, vPlat2;
     Sprite sDude, sPlat;
     SpriteBatch batch;
-
+    TextureAtlas taKirby;
+    Texture tPlat;
+    kirby kirby;
+    float elapsedTime;
+    int i = 0;
+    boolean bL, bR;
     Array<Body> arBodies = new Array<Body>();
+    private World world;
+    private Box2DDebugRenderer b2dr;
+    private OrthographicCamera camera;
+    private CollisionDetector collisionDetector;
+    private Body playerBody;
 
     public void create() {
         // Discovered "InputMultiplexer" here!: http://www.badlogicgames.com/forum/viewtopic.php?f=20&t=10690
@@ -35,6 +48,10 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
         multi.addProcessor(this);
         multi.addProcessor(new GestureDetector(this));
         Gdx.input.setInputProcessor(multi);
+
+        taKirby = new TextureAtlas(Gdx.files.internal("kirby.pack"));
+
+        kirby = new kirby(taKirby);
 
         batch = new SpriteBatch();
         collisionDetector = new CollisionDetector();
@@ -48,7 +65,7 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
 
         b2dr = new Box2DDebugRenderer();
 
-        // create platform
+       /* // create platform
         BodyDef bdef = new BodyDef();
         bdef.position.set(160 / fPpm, 10 / fPpm);
         bdef.type = BodyDef.BodyType.StaticBody;
@@ -63,19 +80,40 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
 
         body.createFixture(fdef);
 
-        sPlat = new Sprite(new Texture(Gdx.files.internal("platform.png"))); //Create sprite for the platform
-        sPlat.setSize((28 / fPpm) * 4, (30 / fPpm) * 4);  // Makes the sprite the right size to just cover the Box2D Body
-        sPlat.setOrigin(sPlat.getWidth() / 2, sPlat.getHeight() / 2); // Sets the Origin of the sprite to the middle instead of the bottom left
+        tPlat = new Texture("platform.png");
+        sPlat = new Sprite(tPlat);
+        //sPlat = new Sprite(new Texture(Gdx.files.internal("platform.png"))); //Create sprite for the platform
+        sPlat.setSize((28 / fPpm) * 5, (30 / fPpm) * 4);  // Makes the sprite the right size to just cover the Box2D Body
+        //sPlat.setOrigin(sPlat.getWidth() / 2, sPlat.getHeight() / 2); // Sets the Origin of the sprite to the middle instead of the bottom left
+        sPlat.setPosition(body.getPosition().x, body.getPosition().y);
         body.setUserData(sPlat); // set the user data as the sprite so in render it returns as an instance of a sprite to draw the sprite on the body :D
         //https://www.youtube.com/watch?v=1cB-iWycUH4
         //This video explains very well how to associate the sprite with the body and what is really happening when drawing a sprite and a body together, thanks :)
+*/
+        tPlat = new Texture("platform.png");
+        sPlat = new Sprite(tPlat);
+        sPlat.setSize((28 / fPpm) * 5, (30 / fPpm) * 4);
+        sPlat.setPosition(160 / fPpm, 10 / fPpm);
+        BodyDef bdef = new BodyDef();
+        bdef.position.set(sPlat.getX(), sPlat.getY());
+        bdef.type = BodyDef.BodyType.StaticBody;
+        Body body = world.createBody(bdef);
 
+        PolygonShape shape = new PolygonShape();
+        shape.setAsBox(50 / fPpm, 5 / fPpm);
+        FixtureDef fdef = new FixtureDef();
+        fdef.shape = shape;
+        fdef.filter.categoryBits = shGround;
+        fdef.filter.maskBits = shPlayer;
+
+        body.createFixture(fdef);
+        body.setUserData(sPlat);
         // create player
         bdef.position.set(160 / fPpm, 200 / fPpm);
         bdef.type = BodyDef.BodyType.DynamicBody;
         playerBody = world.createBody(bdef);
 
-        shape.setAsBox(5 / fPpm, 5 / fPpm);
+        shape.setAsBox(7 / fPpm, 7 / fPpm);
         fdef.shape = shape;
         fdef.filter.categoryBits = shPlayer;
         fdef.filter.maskBits = shGround;
@@ -85,8 +123,8 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
         sDude = new Sprite(new Texture(Gdx.files.internal("badlogic.jpg"))); //Create the sprite for the player
         sDude.setSize((2 / fPpm) * 4, (2 / fPpm) * 4); // set the size of the player to the same size as the body (Box2s uses metres, sprites use pixels so weird conversions, this one looked okay)
         sDude.setOrigin(sDude.getWidth() / 2, sDude.getHeight() / 2);  //set the origin of the sprite to the middle instead of bottom left
-        playerBody.setUserData(sDude); //set the user data of the player as the sprite so it returns as an instance of a sprite to draw sprite on the body
 
+        //playerBody.setUserData(sDude); //set the user data of the player as the sprite so it returns as an instance of a sprite to draw sprite on the body
 
         // set up box2d cam
         camera = new OrthographicCamera();
@@ -94,6 +132,20 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
     }
 
     public void render() {
+        if (bR) {
+            if (i == 9) {
+                i = 0;
+            }
+            i++;
+            playerBody.setUserData(kirby.rightMove[i]);
+        } else if (bL) {
+            if (i == 9) {
+                i = 0;
+            }
+            i++;
+            playerBody.setUserData(kirby.leftMove[i]);
+        }
+        elapsedTime += Gdx.graphics.getDeltaTime();
         //update camera to player location
         camera.position.set(playerBody.getPosition().x, playerBody.getPosition().y, 0);
         camera.update();
@@ -113,10 +165,18 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
         for (Body body : arBodies)
             if (body.getUserData() != null && body.getUserData() instanceof Sprite) { // check if the user data of the body is a sprite, then grab that sprite and draw it on the bodys position and rotation
                 Sprite sprite = (Sprite) body.getUserData();
-                sprite.setPosition(body.getPosition().x - sprite.getWidth() / 2, body.getPosition().y - sprite.getHeight() / 2);
-                sprite.setRotation(body.getAngle() * MathUtils.radiansToDegrees);
+                System.out.println(body.getUserData());
+                if (sprite == sPlat) {
+                    //sprite.setPosition(body.getPosition().x - (sprite.getWidth() * 2) / 5, body.getPosition().y - (((sprite.getHeight() * 2) / 3) + (1 / 3)));
+                    sprite.setPosition(sPlat.getX(), sPlat.getY());
+                } else {
+                    sprite.setPosition(body.getPosition().x - sprite.getWidth() / 2, body.getPosition().y - sprite.getHeight() / 4);
+                }
+                //sprite.setPosition(body.getPosition().x- sprite.getWidth() / 2, body.getPosition().y - (sprite.getScaleY()/10));
+                //sprite.setRotation(body.getAngle() * MathUtils.radiansToDegrees);
                 sprite.draw(batch);
             }
+
         batch.end();
     }
 
@@ -132,15 +192,19 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
     public boolean keyDown(int keycode) {
         if (Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.LEFT)) {
             playerBody.setLinearVelocity(-1f, 0f);
+            bL = true;
         }
         if (Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.RIGHT)) {
             playerBody.setLinearVelocity(1f, 0f);
+            bR = true;
         }
         return false;
     }
 
     @Override
     public boolean keyUp(int keycode) {
+        bL = false;
+        bR = false;
         return false;
     }
 

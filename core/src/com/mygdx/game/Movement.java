@@ -168,7 +168,7 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
                 System.out.println(body.getUserData());
                 if (sprite == sPlat) {
                     //sprite.setPosition(body.getPosition().x - (sprite.getWidth() * 2) / 5, body.getPosition().y - (((sprite.getHeight() * 2) / 3) + (1 / 3)));
-                    sprite.setPosition(sPlat.getX(), sPlat.getY());
+                    sprite.setPosition(body.getPosition().x, body.getPosition().y);
                 } else {
                     sprite.setPosition(body.getPosition().x - sprite.getWidth() / 2, body.getPosition().y - sprite.getHeight() / 4);
                 }

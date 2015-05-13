@@ -1,0 +1,75 @@
+
+kirby.png
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+frame-1
+  rotate: false
+  xy: 1, 108
+  size: 114, 105
+  orig: 114, 105
+  offset: 0, 0
+  index: -1
+frame-2
+  rotate: false
+  xy: 1, 1
+  size: 114, 105
+  orig: 114, 105
+  offset: 0, 0
+  index: -1
+frame-3
+  rotate: false
+  xy: 117, 108
+  size: 114, 105
+  orig: 114, 105
+  offset: 0, 0
+  index: -1
+frame-4
+  rotate: false
+  xy: 117, 1
+  size: 114, 105
+  orig: 114, 105
+  offset: 0, 0
+  index: -1
+frame-5
+  rotate: false
+  xy: 233, 108
+  size: 114, 105
+  orig: 114, 105
+  offset: 0, 0
+  index: -1
+frame-6
+  rotate: false
+  xy: 233, 1
+  size: 114, 105
+  orig: 114, 105
+  offset: 0, 0
+  index: -1
+frame-7
+  rotate: false
+  xy: 349, 108
+  size: 114, 105
+  orig: 114, 105
+  offset: 0, 0
+  index: -1
+frame-8
+  rotate: false
+  xy: 349, 1
+  size: 114, 105
+  orig: 114, 105
+  offset: 0, 0
+  index: -1
+frame-9
+  rotate: false
+  xy: 465, 108
+  size: 114, 105
+  orig: 114, 105
+  offset: 0, 0
+  index: -1
+frame-10
+  rotate: false
+  xy: 465, 1
+  size: 114, 105
+  orig: 114, 105
+  offset: 0, 0
+  index: -1

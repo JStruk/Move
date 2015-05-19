@@ -132,22 +132,18 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
     }
 
     public void render() {
+        if (i == 9) {
+            i = 0;
+        }
+        i++;
         if (bR) {
-            if (i == 9) {
-                i = 0;
-            }
-            i++;
             playerBody.setUserData(kirby.rightMove[i]);
         } else if (bL) {
-            if (i == 9) {
-                i = 0;
-            }
-            i++;
             playerBody.setUserData(kirby.leftMove[i]);
         }
         elapsedTime += Gdx.graphics.getDeltaTime();
         //update camera to player location
-        camera.position.set(playerBody.getPosition().x, playerBody.getPosition().y, 0);
+        camera.position.set(camera.position.x, playerBody.getPosition().y, 0);
         camera.update();
 
         //apply the physics to/update the world every 1/60th of a second
@@ -165,15 +161,11 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
         for (Body body : arBodies)
             if (body.getUserData() != null && body.getUserData() instanceof Sprite) { // check if the user data of the body is a sprite, then grab that sprite and draw it on the bodys position and rotation
                 Sprite sprite = (Sprite) body.getUserData();
-                System.out.println(body.getUserData());
                 if (sprite == sPlat) {
-                    //sprite.setPosition(body.getPosition().x - (sprite.getWidth() * 2) / 5, body.getPosition().y - (((sprite.getHeight() * 2) / 3) + (1 / 3)));
-                    sprite.setPosition(body.getPosition().x, body.getPosition().y);
+                    sprite.setPosition((body.getPosition().x - (sprite.getWidth() * 2) / 5), body.getPosition().y - (((sprite.getHeight() * 2) / 3) - (7 / fPpm)));
                 } else {
                     sprite.setPosition(body.getPosition().x - sprite.getWidth() / 2, body.getPosition().y - sprite.getHeight() / 4);
                 }
-                //sprite.setPosition(body.getPosition().x- sprite.getWidth() / 2, body.getPosition().y - (sprite.getScaleY()/10));
-                //sprite.setRotation(body.getAngle() * MathUtils.radiansToDegrees);
                 sprite.draw(batch);
             }
 

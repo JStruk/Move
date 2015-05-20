@@ -95,6 +95,12 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
         sPlat.setSize((28 / fPpm) * 5, (30 / fPpm) * 4);
         sPlat.setPosition(160 / fPpm, 10 / fPpm);
         BodyDef bdef = new BodyDef();
+
+        BodyDef bdef2 = new BodyDef();
+        bdef2.position.set(sPlat.getX() + 1, sPlat.getY());
+        bdef2.type = BodyDef.BodyType.StaticBody;
+        Body body2 = world.createBody(bdef2);
+
         bdef.position.set(sPlat.getX(), sPlat.getY());
         bdef.type = BodyDef.BodyType.StaticBody;
         Body body = world.createBody(bdef);
@@ -107,7 +113,9 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
         fdef.filter.maskBits = shPlayer;
 
         body.createFixture(fdef);
+        body2.createFixture(fdef);
         body.setUserData(sPlat);
+        body2.setUserData(sPlat);
         // create player
         bdef.position.set(160 / fPpm, 200 / fPpm);
         bdef.type = BodyDef.BodyType.DynamicBody;
@@ -183,11 +191,11 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
     @Override
     public boolean keyDown(int keycode) {
         if (Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.LEFT)) {
-            playerBody.setLinearVelocity(-1f, 0f);
+            playerBody.setLinearVelocity(-1 / 2f, 0f);
             bL = true;
         }
         if (Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.RIGHT)) {
-            playerBody.setLinearVelocity(1f, 0f);
+            playerBody.setLinearVelocity(1 / 2f, 0f);
             bR = true;
         }
         return false;

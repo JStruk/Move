@@ -4,6 +4,7 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.InputProcessor;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -36,13 +37,23 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
     int i = 0, j = 0;
     boolean bL, bR, bFL, bFR;
     Array<Body> arBodies = new Array<Body>();
+    Music mp3Sound;
     private World world;
     private Box2DDebugRenderer b2dr;
     private OrthographicCamera camera;
     private CollisionDetector collisionDetector;
     private Body playerBody;
 
+    public void runAudio() {
+        mp3Sound = Gdx.audio.newMusic(Gdx.files.internal("mayro.mp3"));
+        //mp3Sound.setVolume(0.5f);
+        mp3Sound.play();
+        //audio must be 44k 128hz mono... audiocache will overflow otherwise
+    }
+
     public void create() {
+        runAudio();
+
         // Discovered "InputMultiplexer" here!: http://www.badlogicgames.com/forum/viewtopic.php?f=20&t=10690
         InputMultiplexer multi = new InputMultiplexer();
         multi.addProcessor(this);
@@ -124,9 +135,9 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
         playerBody.setUserData(kirby.idleR[j]);
 
         playerBody.createFixture(fdef).setUserData("player"); //Set the user data of the playerbody to a string to check in the collision detector
-        sDude = new Sprite(new Texture(Gdx.files.internal("badlogic.jpg"))); //Create the sprite for the player
+        /*sDude = new Sprite(new Texture(Gdx.files.internal("badlogic.jpg"))); //Create the sprite for the player
         sDude.setSize((2 / fPpm) * 4, (2 / fPpm) * 4); // set the size of the player to the same size as the body (Box2s uses metres, sprites use pixels so weird conversions, this one looked okay)
-        sDude.setOrigin(sDude.getWidth() / 2, sDude.getHeight() / 2);  //set the origin of the sprite to the middle instead of bottom left
+        sDude.setOrigin(sDude.getWidth() / 2, sDude.getHeight() / 2);  //set the origin of the sprite to the middle instead of bottom left*/
 
         //playerBody.setUserData(sDude); //set the user data of the player as the sprite so it returns as an instance of a sprite to draw sprite on the body
 
@@ -144,12 +155,13 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
         }
         i++;
         if (bR) {
-            playerBody.setLinearVelocity(1f, 0f);
+            playerBody.setLinearVelocity(1f, playerBody.getLinearVelocity().y);
+            // do not put y to 0... otherwise all upward momentum will be lost if moving in mid air
             playerBody.setUserData(kirby.rightMove[i]);
         } else if (bL) {
-            playerBody.setLinearVelocity(-1f, 0f);
+            playerBody.setLinearVelocity(-1f, playerBody.getLinearVelocity().y);
             playerBody.setUserData(kirby.leftMove[i]);
-        } else if (!bR && bFR){
+        } else if (!bR && bFR) {
             playerBody.setUserData(kirby.idleR[j]);
             j++;
         } else if (!bL && bFL) {
@@ -191,6 +203,8 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
         if (collisionDetector.hitTest()) {//if the player is on a platform, and the screen is tapped allow the player to jump
             //playerBody.applyForceToCenter(playerBody.getLinearVelocity().x, 200, true);//jump :D
             playerBody.applyLinearImpulse(playerBody.getLinearVelocity().x, 3, playerBody.getPosition().x, playerBody.getPosition().y, true);
+            //forcetocenter uses pixels... linearimpulse uses meters
+            //(as in the integers)
         }
         return false;
     }
@@ -201,8 +215,7 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
             bFL = true;
             bL = true;
             bFR = false;
-        }
-        if (Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.RIGHT)) {
+        } else if (Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.RIGHT)) {
             bFR = true;
             bR = true;
             bFL = false;

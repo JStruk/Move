@@ -33,8 +33,8 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
     Texture tPlat;
     kirby kirby;
     float elapsedTime;
-    int i = 0;
-    boolean bL, bR;
+    int i = 0, j = 0;
+    boolean bL, bR, bFL, bFR;
     Array<Body> arBodies = new Array<Body>();
     private World world;
     private Box2DDebugRenderer b2dr;
@@ -96,11 +96,6 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
         sPlat.setPosition(160 / fPpm, 10 / fPpm);
         BodyDef bdef = new BodyDef();
 
-        BodyDef bdef2 = new BodyDef();
-        bdef2.position.set(sPlat.getX() + 1, sPlat.getY());
-        bdef2.type = BodyDef.BodyType.StaticBody;
-        Body body2 = world.createBody(bdef2);
-
         bdef.position.set(sPlat.getX(), sPlat.getY());
         bdef.type = BodyDef.BodyType.StaticBody;
         Body body = world.createBody(bdef);
@@ -113,9 +108,7 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
         fdef.filter.maskBits = shPlayer;
 
         body.createFixture(fdef);
-        body2.createFixture(fdef);
         body.setUserData(sPlat);
-        body2.setUserData(sPlat);
         // create player
         bdef.position.set(160 / fPpm, 200 / fPpm);
         bdef.type = BodyDef.BodyType.DynamicBody;
@@ -126,6 +119,9 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
         fdef.filter.categoryBits = shPlayer;
         fdef.filter.maskBits = shGround;
         playerBody.createFixture(fdef);
+
+        //playerBody.setUserData(kirby.idleR[j]);
+        playerBody.setUserData(kirby.idleR[j]);
 
         playerBody.createFixture(fdef).setUserData("player"); //Set the user data of the playerbody to a string to check in the collision detector
         sDude = new Sprite(new Texture(Gdx.files.internal("badlogic.jpg"))); //Create the sprite for the player
@@ -143,11 +139,22 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
         if (i == 9) {
             i = 0;
         }
+        if (j == 121) {
+            j = 0;
+        }
         i++;
         if (bR) {
+            playerBody.setLinearVelocity(1f, 0f);
             playerBody.setUserData(kirby.rightMove[i]);
         } else if (bL) {
+            playerBody.setLinearVelocity(-1f, 0f);
             playerBody.setUserData(kirby.leftMove[i]);
+        } else if (!bR && bFR){
+            playerBody.setUserData(kirby.idleR[j]);
+            j++;
+        } else if (!bL && bFL) {
+            playerBody.setUserData(kirby.idleL[j]);
+            j++;
         }
         elapsedTime += Gdx.graphics.getDeltaTime();
         //update camera to player location
@@ -176,14 +183,14 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
                 }
                 sprite.draw(batch);
             }
-
         batch.end();
     }
 
     @Override
     public boolean tap(float x, float y, int count, int button) {
         if (collisionDetector.hitTest()) {//if the player is on a platform, and the screen is tapped allow the player to jump
-            playerBody.applyForceToCenter(0, 200, true);//jump :D
+            //playerBody.applyForceToCenter(playerBody.getLinearVelocity().x, 200, true);//jump :D
+            playerBody.applyLinearImpulse(playerBody.getLinearVelocity().x, 3, playerBody.getPosition().x, playerBody.getPosition().y, true);
         }
         return false;
     }
@@ -191,12 +198,14 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
     @Override
     public boolean keyDown(int keycode) {
         if (Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.LEFT)) {
-            playerBody.setLinearVelocity(-1 / 2f, 0f);
+            bFL = true;
             bL = true;
+            bFR = false;
         }
         if (Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.RIGHT)) {
-            playerBody.setLinearVelocity(1 / 2f, 0f);
+            bFR = true;
             bR = true;
+            bFL = false;
         }
         return false;
     }

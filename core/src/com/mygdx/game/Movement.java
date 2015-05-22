@@ -20,6 +20,7 @@ import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 public class Movement extends ApplicationAdapter implements InputProcessor, GestureDetector.GestureListener {
     public static final float fPpm = 100;
@@ -35,7 +36,7 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
     kirby kirby;
     float elapsedTime;
     int i = 0, j = 0;
-    boolean bL, bR, bFL, bFR;
+    boolean bL, bR, bFL, bFR = true;
     Array<Body> arBodies = new Array<Body>();
     Music mp3Sound;
     private World world;
@@ -47,7 +48,7 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
     public void runAudio() {
         mp3Sound = Gdx.audio.newMusic(Gdx.files.internal("mayro.mp3"));
         //mp3Sound.setVolume(0.5f);
-        mp3Sound.play();
+        //mp3Sound.play();
         //audio must be 44k 128hz mono... audiocache will overflow otherwise
     }
 
@@ -227,6 +228,7 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
     public boolean keyUp(int keycode) {
         bL = false;
         bR = false;
+        playerBody.setLinearVelocity(0f , playerBody.getLinearVelocity().y);
         return false;
     }
 

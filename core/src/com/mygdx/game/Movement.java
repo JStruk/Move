@@ -20,7 +20,6 @@ import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 public class Movement extends ApplicationAdapter implements InputProcessor, GestureDetector.GestureListener {
     public static final float fPpm = 100;
@@ -29,10 +28,10 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
     public static final float STEP = 1 / 60f;
     float w, h;
     Vector2 vPlat1, vPlat2;
-    Sprite sDude, sPlat;
+    Sprite sDude, sPlat, background;
     SpriteBatch batch;
     TextureAtlas taKirby;
-    Texture tPlat;
+    Texture tPlat, tBackground;
     kirby kirby;
     float elapsedTime;
     int i = 0, j = 0;
@@ -55,6 +54,10 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
     public void create() {
         runAudio();
 
+        tBackground = new Texture(Gdx.files.internal("Green_Greens_1.PNG"));
+        background = new Sprite(tBackground);
+        background.setScale(Gdx.graphics.getHeight() / 475, Gdx.graphics.getWidth() / 475);
+        background.setOrigin(tBackground.getHeight() / 2, tBackground.getWidth() / 2);
         // Discovered "InputMultiplexer" here!: http://www.badlogicgames.com/forum/viewtopic.php?f=20&t=10690
         InputMultiplexer multi = new InputMultiplexer();
         multi.addProcessor(this);
@@ -148,6 +151,7 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
     }
 
     public void render() {
+
         if (i == 9) {
             i = 0;
         }
@@ -184,6 +188,8 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
         batch.setProjectionMatrix(camera.combined);
         //start drawing the sprites
         batch.begin();
+        background.draw(batch);
+        background.setPosition(playerBody.getPosition().x, playerBody.getPosition().y);
         //put all the bodies on the stage into an array of bodies
         world.getBodies(arBodies);
         for (Body body : arBodies)
@@ -228,7 +234,7 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
     public boolean keyUp(int keycode) {
         bL = false;
         bR = false;
-        playerBody.setLinearVelocity(0f , playerBody.getLinearVelocity().y);
+        playerBody.setLinearVelocity(0f, playerBody.getLinearVelocity().y);
         return false;
     }
 

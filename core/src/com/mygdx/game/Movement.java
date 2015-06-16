@@ -12,6 +12,7 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.input.GestureDetector;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
@@ -34,8 +35,8 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
     Texture tPlat, tBackground;
     kirby kirby;
     float elapsedTime;
-    int i = 0, j = 0;
-    boolean bL, bR, bFL, bFR = true;
+    int i = 0, j = 0, nPlats = 30, nScore = 0, nCount = 0, nDestroy;
+    boolean bL, bR, bFL, bFR = true, bDestroyed=false;
     Array<Body> arBodies = new Array<Body>();
     Music mp3Sound;
     private World world;
@@ -43,9 +44,13 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
     private OrthographicCamera camera;
     private CollisionDetector collisionDetector;
     private Body playerBody;
+    Body body;
+    Array<Body> arPlats = new Array<Body>();
+    double dPlatInc = 0;
+    float fRandX, fPlatInc = 100 / fPpm;
 
     public void runAudio() {
-        mp3Sound = Gdx.audio.newMusic(Gdx.files.internal("mayro.mp3"));
+        //     mp3Sound = Gdx.audio.newMusic(Gdx.files.internal("mayro.mp3"));
         //mp3Sound.setVolume(0.5f);
         //mp3Sound.play();
         //audio must be 44k 128hz mono... audiocache will overflow otherwise
@@ -53,7 +58,6 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
 
     public void create() {
         runAudio();
-
         tBackground = new Texture(Gdx.files.internal("Green_Greens_1.PNG"));
         background = new Sprite(tBackground);
         background.setScale(Gdx.graphics.getHeight() / 475, Gdx.graphics.getWidth() / 475);
@@ -63,11 +67,8 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
         multi.addProcessor(this);
         multi.addProcessor(new GestureDetector(this));
         Gdx.input.setInputProcessor(multi);
-
         taKirby = new TextureAtlas(Gdx.files.internal("kirby.pack"));
-
         kirby = new kirby(taKirby);
-
         batch = new SpriteBatch();
         collisionDetector = new CollisionDetector();
         vPlat1 = new Vector2(-15, 0);
@@ -79,51 +80,41 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
         world.setContactListener(collisionDetector);
 
         b2dr = new Box2DDebugRenderer();
-
-       /* // create platform
-        BodyDef bdef = new BodyDef();
-        bdef.position.set(160 / fPpm, 10 / fPpm);
-        bdef.type = BodyDef.BodyType.StaticBody;
-        Body body = world.createBody(bdef);
-
-        PolygonShape shape = new PolygonShape();
-        shape.setAsBox(50 / fPpm, 5 / fPpm);
-        FixtureDef fdef = new FixtureDef();
-        fdef.shape = shape;
-        fdef.filter.categoryBits = shGround;
-        fdef.filter.maskBits = shPlayer;
-
-        body.createFixture(fdef);
-
-        tPlat = new Texture("platform.png");
-        sPlat = new Sprite(tPlat);
-        //sPlat = new Sprite(new Texture(Gdx.files.internal("platform.png"))); //Create sprite for the platform
-        sPlat.setSize((28 / fPpm) * 5, (30 / fPpm) * 4);  // Makes the sprite the right size to just cover the Box2D Body
-        //sPlat.setOrigin(sPlat.getWidth() / 2, sPlat.getHeight() / 2); // Sets the Origin of the sprite to the middle instead of the bottom left
-        sPlat.setPosition(body.getPosition().x, body.getPosition().y);
-        body.setUserData(sPlat); // set the user data as the sprite so in render it returns as an instance of a sprite to draw the sprite on the body :D
         //https://www.youtube.com/watch?v=1cB-iWycUH4
         //This video explains very well how to associate the sprite with the body and what is really happening when drawing a sprite and a body together, thanks :)
-*/
-        tPlat = new Texture("platform.png");
-        sPlat = new Sprite(tPlat);
+        sPlat = new Sprite(new Texture(Gdx.files.internal("platform.png")));
         sPlat.setSize((28 / fPpm) * 5, (30 / fPpm) * 4);
         sPlat.setPosition(160 / fPpm, 10 / fPpm);
         BodyDef bdef = new BodyDef();
-
         bdef.position.set(sPlat.getX(), sPlat.getY());
         bdef.type = BodyDef.BodyType.StaticBody;
-        Body body = world.createBody(bdef);
-
         PolygonShape shape = new PolygonShape();
         shape.setAsBox(50 / fPpm, 5 / fPpm);
         FixtureDef fdef = new FixtureDef();
         fdef.shape = shape;
         fdef.filter.categoryBits = shGround;
         fdef.filter.maskBits = shPlayer;
-
-        body.createFixture(fdef);
-        body.setUserData(sPlat);
+        for (int i = 0; i < nPlats; i++) {
+            body = world.createBody(bdef);
+            body.createFixture(fdef);
+            body.setUserData(sPlat);
+            arPlats.add(body);
+        }
+        for (int j = 0; j < arPlats.size; j++) {
+            arPlats.get(j).setUserData(sPlat);
+            if (j == 0) {
+                // System.out.println("Plat: " + j + " y: " + 8 / fPpm);
+                arPlats.get(j).setTransform(120 / fPpm, 8 / fPpm, arPlats.get(j).getAngle());
+            } else {
+                fRandX = MathUtils.random() * (float) 1.5;
+                if (j % 2 == 0) {
+                    arPlats.get(j).setTransform((arPlats.get(j - 1).getPosition().x) - fRandX, arPlats.get(j - 1).getPosition().y + fPlatInc, arPlats.get(j).getAngle());
+                } else {
+                    arPlats.get(j).setTransform((arPlats.get(j - 1).getPosition().x) + fRandX, arPlats.get(j - 1).getPosition().y + fPlatInc, arPlats.get(j).getAngle());
+                }
+            }
+            arPlats.get(j).setUserData(sPlat);
+        }
         // create player
         bdef.position.set(160 / fPpm, 200 / fPpm);
         bdef.type = BodyDef.BodyType.DynamicBody;
@@ -148,10 +139,18 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
         // set up box2d cam
         camera = new OrthographicCamera();
         camera.setToOrtho(false, nWidth / fPpm, nHeight / fPpm);
+        // for (int o = 0; o < arPlats.size; o++) {
+        //   System.out.println(arPlats.get(o).getPosition().y);
+        //  System.out.println(Gdx.graphics.getHeight() / fPpm);
+        //}
+
     }
 
     public void render() {
-
+        world.step(STEP, 6, 2);
+        bDestroyed=true;
+        nDestroy=1;
+        nCount++;
         if (i == 9) {
             i = 0;
         }
@@ -177,19 +176,29 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
         //update camera to player location
         camera.position.set(camera.position.x, playerBody.getPosition().y, 0);
         camera.update();
+        if (nCount % 30 == 0) {
+            //   System.out.println(playerBody.getPosition().y);
+        }
+        // for (int k = 0; k < arPlats.size; k++) {
 
-        //apply the physics to/update the world every 1/60th of a second
-        world.step(STEP, 6, 2);
+//            if (arPlats.get(k).getPosition().y < playerBody.getPosition().y) {
+        //              System.out.println(k);
+        //            System.out.println("rut");
+        //              arPlats.removeRange(k,k);
+        //          arPlats.removeIndex(k);
+        //    }
+        // }
+        //update the box2d world
 
+        // world.destroyBody(arPlats.get(1));
         Gdx.gl20.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
         // render b2d world
         b2dr.render(world, camera.combined);
         batch.setProjectionMatrix(camera.combined);
         //start drawing the sprites
         batch.begin();
-        background.draw(batch);
-        background.setPosition(playerBody.getPosition().x, playerBody.getPosition().y);
+        //background.draw(batch);
+        // background.setPosition(playerBody.getPosition().x, playerBody.getPosition().y);
         //put all the bodies on the stage into an array of bodies
         world.getBodies(arBodies);
         for (Body body : arBodies)
@@ -203,13 +212,18 @@ public class Movement extends ApplicationAdapter implements InputProcessor, Gest
                 sprite.draw(batch);
             }
         batch.end();
+        DestroyPlats();
+    }
+
+    public void DestroyPlats() {
+    //    world.destroyBody(arPlats.get(nDestroy));
     }
 
     @Override
     public boolean tap(float x, float y, int count, int button) {
         if (collisionDetector.hitTest()) {//if the player is on a platform, and the screen is tapped allow the player to jump
-            //playerBody.applyForceToCenter(playerBody.getLinearVelocity().x, 200, true);//jump :D
-            playerBody.applyLinearImpulse(playerBody.getLinearVelocity().x, 3, playerBody.getPosition().x, playerBody.getPosition().y, true);
+            nPlats++;
+            playerBody.applyLinearImpulse(playerBody.getLinearVelocity().x, 5, playerBody.getPosition().x, playerBody.getPosition().y, true);
             //forcetocenter uses pixels... linearimpulse uses meters
             //(as in the integers)
         }

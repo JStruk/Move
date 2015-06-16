@@ -7,8 +7,10 @@ import com.badlogic.gdx.physics.box2d.*;
  */
 public class CollisionDetector implements ContactListener {
     private static boolean isHit;
+    public int nScore = 0;
 
     public void beginContact(Contact c) {
+        nScore++;
         Fixture fa = c.getFixtureA();
         Fixture fb = c.getFixtureB();
         isHit = true;
@@ -32,12 +34,14 @@ public class CollisionDetector implements ContactListener {
         if (fb.getUserData() != null && fb.getUserData().equals("player")) {
             isHit = false;
         }
-
     }
 
     public static boolean hitTest() {
-
         return isHit;
+    }
+
+    public int Score() {
+        return nScore;
     }
 
     @Override
